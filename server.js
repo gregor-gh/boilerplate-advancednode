@@ -5,6 +5,7 @@ const myDB = require('./connection');
 const fccTesting = require('./freeCodeCamp/fcctesting.js');
 const session = require("express-session")
 const passport = require("passport")
+const ObjectId = require("mongodb").ObjectID;
 
 const app = express();
 
@@ -25,12 +26,39 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.route('/').get((req, res) => {
-  res.render(process.cwd() + '/views/pug', {
-    title: "Hello",
-    message: "Please login"
+
+
+myDB(async client => {
+  const myDatabase = await client.db("advnode").collection("users");
+
+  app.route('/').get((req, res) => {
+    res.render(process.cwd() + '/views/pug', {
+      title: "Hello",
+      message: "Please login"
+    });
   });
-});
+
+  passport.serializeUser((user,done) => {
+    done(null, user._id)
+  })
+  
+  passport.deserializeUser((id,done) => {
+    myDB.findOne({
+      _id: new ObjectId(id)
+    }, (err, doc) => {
+      done(null,doc)
+    })
+  })
+}).catch(e => {
+  app.route("/").get((req,res) => {
+    res.render(process.cwd() + '/views/pug', {
+      title: e,
+      message: "Unable to login, login server down"
+    });
+  })
+})
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
