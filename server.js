@@ -32,19 +32,12 @@ app.use(passport.session());
 myDB(async client => {
   const myDatabase = await client.db("advnode").collection("users");
 
-  app.route('/').get((req, res) => {
-    res.render(process.cwd() + '/views/pug', {
-      title: "Connected to Database",
-      message: "Please login"
-    });
-  });
-
-  passport.serializeUser((user,done) => {
+    passport.serializeUser((user,done) => {
     done(null, user._id)
   })
   
   passport.deserializeUser((id,done) => {
-    myDB.findOne({
+    myDatabase.findOne({
       _id: new ObjectId(id)
     }, (err, doc) => {
       done(null,doc)
@@ -53,8 +46,8 @@ myDB(async client => {
 
   passport.use(new LocalStrategy(
     (username, password, done) => {
-      myDB.findOne({ username: username }, (err, user) => {
-        console.log("User " + username + "attempted to log in");
+      myDatabase.findOne({ username: username }, (err, user) => {
+        console.log("User " + username + " attempted to log in");
         if(err) { return done(err); }
         if(!user) {return done(null, false); }
         if (password != user.password) { return done(null, false); }
@@ -62,6 +55,19 @@ myDB(async client => {
       });
     }
   ));
+
+  app.route('/').get((req, res) => {
+    res.render(process.cwd() + '/views/pug', {
+      title: "Connected to Database",
+      message: "Please login",
+      showLogin: true
+    });
+  });
+
+  app.route("/login").post(passport.authenticate("local", { failureRedirect: "/" }), (req, res) => {
+    res.render(process.cwd() + "/views/pug/profile.pug")
+  })
+
 }).catch(e => {
   app.route("/").get((req,res) => {
     res.render(process.cwd() + '/views/pug', {
