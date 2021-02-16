@@ -15,7 +15,8 @@ module.exports = (app, myDatabase) => {
       title: "Connected to Database",
       message: "Please login",
       showLogin: true,
-      showRegistration: true
+      showRegistration: true,
+      showSocialAuth: true
     });
   });
 
@@ -69,7 +70,19 @@ module.exports = (app, myDatabase) => {
     .get((req,res)=> {
       req.logout();
       res.redirect("/")
+    });
+
+  app.route("/auth/github")
+    .get((req, res) => {
+      passport.authenticate("github")
     })
+
+  app.route("/auth/github/callback")
+    .get((req, res) => {
+      passport.authenticate("github", {failureRedirect: "/"}), (req, rest) => {
+        res.redirect("/profile")
+      }
+    });
 
   app.use((_req, res, _next) => {
     res.status(404)
